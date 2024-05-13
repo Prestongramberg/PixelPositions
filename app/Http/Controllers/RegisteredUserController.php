@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\File;
+use Mockery\Generator\StringManipulation\Pass\Pass;
 
 class RegisteredUserController extends Controller
 {
@@ -27,8 +32,26 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $userAttributes = $request->validate([
+            'name' => ['required'],
+            'email' => ['required', 'email', 'max:254', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Password::min(6)],
+        ]);
+
+        $employerAttributes = $request->validate([
+            'name' => ['required'],
+            'logo' => ['required', File::types(['png', 'jpg', 'webp'])],
+        ]);
+
+        $user = User::create($userAttributes);
+
+        $request->logo->store('logos');
+
+        $user->employer()->create($employerAttributes);
+
+        Auth::login($user);
     }
+
 
     /**
      * Display the specified resource.
